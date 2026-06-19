@@ -8,7 +8,7 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = [
-    "dbt-duckdb>=1.8,<1.9",
+    "dbt-duckdb>=1.8,<1.11",
 ]
 
 [tool.setuptools]
