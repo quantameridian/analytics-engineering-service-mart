@@ -32,3 +32,9 @@ jobs:
 
       - name: Run dbt tests
         run: make test DBT=dbt PROFILES_DIR=.
+
+      - name: Generate dbt docs
+        run: make docs DBT=dbt PROFILES_DIR=.
+
+      - name: Export mart preview
+        run: make preview PYTHON=python

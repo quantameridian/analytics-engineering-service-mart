@@ -5,25 +5,47 @@ models:
     description: Team dimension for reporting ownership and service-area grouping.
     columns:
       - name: team_id
+        description: Stable synthetic team key used to join facts to team ownership.
         tests:
           - not_null
           - unique
+      - name: team_name
+        description: Human-readable team label for management reporting.
+      - name: reporting_unit
+        description: Higher-level reporting group used for service performance review.
+      - name: service_area
+        description: Broad service area represented by the team.
+      - name: team_lead
+        description: Synthetic role/name representing accountable team leadership.
       - name: active_flag
+        description: Indicates whether the team is currently active for reporting.
         tests:
           - not_null
           - accepted_values:
               arguments:
                 values: [true, false]
                 quote: false
+      - name: effective_from
+        description: Start date for the team reference row.
+      - name: effective_to
+        description: End date for the team reference row when no longer active.
 
   - name: dim_service_category
     description: Service category dimension for workload and SLA grouping.
     columns:
       - name: category_id
+        description: Stable synthetic service category key.
         tests:
           - not_null
           - unique
+      - name: category_name
+        description: Human-readable category label used in service reporting.
+      - name: service_group
+        description: Higher-level grouping for related service categories.
+      - name: default_priority
+        description: Default priority assigned to the category before case-level override.
       - name: sla_eligible_flag
+        description: Indicates whether cases in this category are normally SLA eligible.
         tests:
           - not_null
           - accepted_values:
@@ -35,32 +57,59 @@ models:
     description: Event-level fact table preserving service event history and sequence.
     columns:
       - name: event_id
+        description: Stable synthetic event key.
         tests:
           - not_null
           - unique
       - name: case_id
+        description: Case key tying the event back to the case performance fact.
         tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('fact_case_performance')
                 field: case_id
+      - name: event_at
+        description: Timestamp of the event in the synthetic lifecycle.
+      - name: event_type
+        description: Event classification used to reconstruct case history.
+      - name: from_status
+        description: Status before the event, where applicable.
+      - name: to_status
+        description: Status after the event, where applicable.
       - name: team_id
+        description: Team associated with the event at that point in the lifecycle.
         tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_team')
                 field: team_id
+      - name: event_sequence_number
+        description: Ordered event number within each case lifecycle.
+      - name: previous_event_type
+        description: Previous event classification for audit and sequence checks.
+      - name: next_event_type
+        description: Next event classification for audit and sequence checks.
+      - name: first_event_at
+        description: First event timestamp observed for the case.
+      - name: latest_event_at
+        description: Latest event timestamp observed for the case.
+      - name: event_notes
+        description: Synthetic note field describing the event.
 
   - name: fact_case_performance
     description: Case-level fact table for lifecycle, SLA, overdue, and cycle-time reporting.
     columns:
       - name: case_id
+        description: Stable synthetic service case key and fact-table grain.
         tests:
           - not_null
           - unique
+      - name: case_reference
+        description: Human-readable synthetic case reference.
       - name: team_id
+        description: Team key responsible for the case.
         tests:
           - not_null
           - relationships:
@@ -68,26 +117,72 @@ models:
                 to: ref('dim_team')
                 field: team_id
       - name: category_id
+        description: Service category key assigned to the case.
         tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_service_category')
                 field: category_id
+      - name: priority
+        description: Case priority used for SLA target lookup and workload review.
+      - name: current_status
+        description: Current operational case status from the latest case state.
       - name: reporting_status
+        description: Management reporting classification derived from status and SLA state.
         tests:
           - not_null
           - accepted_values:
               arguments:
                 values: ["closed", "cancelled", "paused", "open_overdue", "open_within_sla"]
+      - name: opened_at
+        description: Case opened timestamp.
+      - name: closed_at
+        description: Case closed timestamp when available.
+      - name: sla_due_at
+        description: SLA due timestamp calculated from target rules.
+      - name: reporting_period
+        description: Month-level reporting period used in the management mart.
+      - name: is_open_active
+        description: Boolean flag for open or in-progress cases that remain active.
+      - name: is_paused
+        description: Boolean flag for paused cases.
+      - name: is_closed
+        description: Boolean flag for closed cases.
+      - name: is_cancelled
+        description: Boolean flag for cancelled cases.
+      - name: was_reopened
+        description: Indicates whether the event history includes a reopen event.
+      - name: was_paused
+        description: Indicates whether the event history includes a paused state.
+      - name: is_sla_eligible
+        description: Indicates whether the case is in scope for SLA calculation.
+      - name: is_overdue
+        description: Indicates whether an active case has passed its SLA due timestamp.
+      - name: paused_past_sla_due
+        description: Indicates whether a paused case has passed its SLA due timestamp.
+      - name: sla_met_flag
+        description: Indicates whether a closed SLA-eligible case met its target.
+      - name: target_id
+        description: SLA target key joined from the target reference data.
+      - name: sla_hours
+        description: SLA target duration in hours.
+      - name: target_met_rate
+        description: Synthetic target benchmark rate for the category and priority.
+      - name: cycle_time_days
+        description: Days between opened and closed timestamps for closed cases.
+      - name: age_days_at_report_date
+        description: Days open as of the report date for unresolved cases.
 
   - name: mart_service_performance
     description: Management-facing service performance mart by period, team, and category.
     columns:
       - name: reporting_period
+        description: Month-level reporting period for the aggregate row.
         tests:
           - not_null
       - name: team_id
+        description: Team key for the aggregate row.
         tests:
           - not_null
           - relationships:
@@ -95,10 +190,38 @@ models:
                 to: ref('dim_team')
                 field: team_id
       - name: category_id
+        description: Service category key for the aggregate row.
         tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_service_category')
                 field: category_id
-
+      - name: case_count
+        description: Count of cases in the reporting period, team, and category.
+      - name: closed_case_count
+        description: Count of cases closed in the aggregate row.
+      - name: open_case_count
+        description: Count of active open cases in the aggregate row.
+      - name: overdue_open_case_count
+        description: Count of open cases past SLA due timestamp.
+      - name: paused_case_count
+        description: Count of paused cases in the aggregate row.
+      - name: reopened_case_count
+        description: Count of cases with at least one reopen event.
+      - name: sla_eligible_case_count
+        description: Count of cases eligible for SLA calculation.
+      - name: closed_sla_eligible_case_count
+        description: Count of closed cases included in SLA-met-rate denominator.
+      - name: sla_met_case_count
+        description: Count of closed SLA-eligible cases that met target.
+      - name: average_cycle_time_days
+        description: Average cycle time in days for closed cases in the aggregate row.
+      - name: median_cycle_time_days
+        description: Median cycle time in days for closed cases in the aggregate row.
+      - name: average_open_age_days
+        description: Average unresolved age in days for open cases.
+      - name: sla_met_rate
+        description: SLA met case count divided by closed SLA-eligible case count.
+      - name: overdue_share
+        description: Overdue case count divided by total case count in the aggregate row.

@@ -3,6 +3,7 @@ name = "analytics-engineering-service-mart"
 version = "0.1.0"
 description = "A local dbt service mart portfolio project using synthetic operations data."
 requires-python = ">=3.9"
+license = "MIT"
 dependencies = []
 
 [project.optional-dependencies]

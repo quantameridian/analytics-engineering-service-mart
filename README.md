@@ -1,10 +1,23 @@
 # Analytics Engineering Service Mart
 
+[![CI](https://github.com/quantameridian/analytics-engineering-service-mart/actions/workflows/ci.yml/badge.svg)](https://github.com/quantameridian/analytics-engineering-service-mart/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 ## Project purpose
 
 This repository is a local dbt analytics engineering project that turns fragmented service and operations extracts into clean, tested reporting models.
 
 The implementation is local and reproducible. It uses synthetic seed data, SQL transformations, dbt tests, and documentation to show how raw operational records can become a maintainable service performance mart.
+
+## Reviewer quick path
+
+If you are reviewing this quickly, start here:
+
+1. Read the source-to-mart route and facts/dimensions below.
+2. Inspect `docs/mart-output-preview.md` to see a generated sample of the final mart.
+3. Run `make qa` to seed, run, test, generate dbt docs, and refresh the mart preview.
+
+The current GitHub Actions workflow runs dbt seed, run, test, docs generation, and preview export on every push to `main`.
 
 ## Business problem
 
@@ -88,9 +101,7 @@ make install
 Then load seeds, build the models, and run tests:
 
 ```bash
-make seed
-make run
-make test
+make qa
 ```
 
 Or run the dbt commands directly with the repo-local profile:
@@ -112,10 +123,12 @@ Current outputs:
 - dimensional models for teams and categories;
 - fact table for case performance;
 - management-facing service performance mart;
+- generated mart preview in `docs/mart-output-preview.md`;
 
-Later documentation output:
+Local generated outputs:
 
-- dbt docs lineage graph.
+- dbt docs artifacts in `target/`;
+- DuckDB development database in `target/service_mart.duckdb`.
 
 ## Tests and quality checks
 
@@ -126,7 +139,8 @@ Current checks:
 - relationship tests between cases, teams, categories, events, and SLA targets;
 - business-rule tests for non-negative cycle time, overdue classification, and SLA flag consistency;
 - metric-level tests for overdue, SLA, backlog, and cycle-time calculations.
-- GitHub Actions CI installs the local dbt/DuckDB environment and runs `dbt seed`, `dbt run`, and `dbt test`.
+- mart-layer column descriptions are included for generated dbt docs review.
+- GitHub Actions CI installs the local dbt/DuckDB environment and runs `dbt seed`, `dbt run`, `dbt test`, `dbt docs generate`, and the mart preview export.
 
 ## Acceptance criteria
 
@@ -156,6 +170,6 @@ It is deliberately separate from the Python data quality engine repo. This proje
 
 ## Next improvements
 
-1. Generate and review dbt documentation.
-2. Add more seed rows so the mart supports richer trend and category comparisons.
-3. Add a short mart output preview or dbt docs screenshot only after it is generated from the actual project.
+1. Add more seed rows so the mart supports richer trend and category comparisons.
+2. Add SQL linting if the project grows beyond the current compact model set.
+3. Add a dbt docs screenshot only after it is generated from the actual project.
