@@ -1,0 +1,126 @@
+version: 2
+
+models:
+  - name: stg_cases
+    description: Cleaned case header records from the synthetic service operations extract.
+    columns:
+      - name: case_id
+        tests:
+          - not_null
+          - unique
+      - name: current_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["open", "in_progress", "paused", "closed", "cancelled"]
+      - name: priority
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["low", "medium", "high"]
+      - name: team_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_teams')
+                field: team_id
+      - name: category_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_case_categories')
+                field: category_id
+      - name: request_channel
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["portal", "phone", "email"]
+
+  - name: stg_teams
+    description: Cleaned team reference data for service ownership and reporting units.
+    columns:
+      - name: team_id
+        tests:
+          - not_null
+          - unique
+      - name: active_flag
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+
+  - name: stg_service_events
+    description: Cleaned case event history for lifecycle reconstruction.
+    columns:
+      - name: event_id
+        tests:
+          - not_null
+          - unique
+      - name: case_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_cases')
+                field: case_id
+      - name: team_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_teams')
+                field: team_id
+      - name: event_type
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["created", "assigned", "status_change", "paused", "reopened", "closed", "cancelled"]
+
+  - name: stg_case_categories
+    description: Cleaned category reference data for service grouping.
+    columns:
+      - name: category_id
+        tests:
+          - not_null
+          - unique
+      - name: default_priority
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["low", "medium", "high"]
+      - name: sla_eligible_flag
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+
+  - name: stg_targets
+    description: Cleaned SLA target rules by category and priority.
+    columns:
+      - name: target_id
+        tests:
+          - not_null
+          - unique
+      - name: category_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_case_categories')
+                field: category_id
+      - name: priority
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["low", "medium", "high"]

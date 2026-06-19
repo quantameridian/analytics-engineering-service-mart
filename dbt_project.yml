@@ -1,0 +1,25 @@
+name: analytics_engineering_service_mart
+version: "0.1.0"
+config-version: 2
+
+profile: analytics_engineering_service_mart
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  analytics_engineering_service_mart:
+    staging:
+      +materialized: view
+
+seeds:
+  analytics_engineering_service_mart:
+    +schema: raw
+

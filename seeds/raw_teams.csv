@@ -1,0 +1,8 @@
+team_id,team_name,reporting_unit,service_area,team_lead,active_flag,effective_from,effective_to
+T001,Access Support,Digital Services,Digital Operations,Avery Patel,true,2025-01-01,
+T002,Customer Response,Customer Operations,Customer Support,Riley Morgan,true,2025-01-01,
+T003,Billing Resolution,Finance Operations,Finance Services,Jordan Lee,true,2025-01-01,
+T004,Facilities Helpdesk,Workplace Services,Facilities Coordination,Casey Brooks,true,2025-01-01,
+T005,People Casework,People Operations,People Services,Sam Taylor,true,2025-01-01,
+T006,Data Requests,Data Operations,Reporting Services,Quinn Roberts,true,2025-01-01,
+T007,Legacy Support,Customer Operations,Customer Support,Morgan Reed,false,2024-01-01,2026-03-31

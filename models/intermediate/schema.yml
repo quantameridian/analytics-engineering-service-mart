@@ -1,0 +1,71 @@
+version: 2
+
+models:
+  - name: int_service_event_sequence
+    description: Event-level sequence model used to reconstruct case lifecycle order.
+    columns:
+      - name: event_id
+        tests:
+          - not_null
+          - unique
+      - name: case_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_cases')
+                field: case_id
+      - name: event_sequence_number
+        tests:
+          - not_null
+      - name: event_type
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["created", "assigned", "status_change", "paused", "reopened", "closed", "cancelled"]
+
+  - name: int_case_lifecycle
+    description: Case-level lifecycle model with derived status, reopened, paused, age, and cycle-time fields.
+    columns:
+      - name: case_id
+        tests:
+          - not_null
+          - unique
+      - name: current_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["open", "in_progress", "paused", "closed", "cancelled"]
+      - name: event_count
+        tests:
+          - not_null
+
+  - name: int_service_sla_status
+    description: Case-level SLA and reporting-status classification model.
+    columns:
+      - name: case_id
+        tests:
+          - not_null
+          - unique
+      - name: is_sla_eligible
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+      - name: is_overdue
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+                quote: false
+      - name: reporting_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["closed", "cancelled", "paused", "open_overdue", "open_within_sla"]

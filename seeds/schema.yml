@@ -1,0 +1,52 @@
+version: 2
+
+seeds:
+  - name: raw_cases
+    description: Synthetic case header extract.
+    columns:
+      - name: case_id
+        tests:
+          - not_null
+          - unique
+      - name: team_id
+        tests:
+          - not_null
+      - name: category_id
+        tests:
+          - not_null
+
+  - name: raw_teams
+    description: Synthetic team reference extract.
+    columns:
+      - name: team_id
+        tests:
+          - not_null
+          - unique
+
+  - name: raw_service_events
+    description: Synthetic service event extract.
+    columns:
+      - name: event_id
+        tests:
+          - not_null
+          - unique
+      - name: case_id
+        tests:
+          - not_null
+
+  - name: raw_case_categories
+    description: Synthetic case category reference extract.
+    columns:
+      - name: category_id
+        tests:
+          - not_null
+          - unique
+
+  - name: raw_targets
+    description: Synthetic SLA target extract.
+    columns:
+      - name: target_id
+        tests:
+          - not_null
+          - unique
+

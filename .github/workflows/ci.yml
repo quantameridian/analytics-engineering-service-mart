@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+jobs:
+  dbt:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: make install PYTHON=python
+
+      - name: Show dbt version
+        run: dbt --version
+
+      - name: Load seed data
+        run: make seed DBT=dbt PROFILES_DIR=.
+
+      - name: Run dbt models
+        run: make run DBT=dbt PROFILES_DIR=.
+
+      - name: Run dbt tests
+        run: make test DBT=dbt PROFILES_DIR=.

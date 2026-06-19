@@ -1,0 +1,8 @@
+analytics_engineering_service_mart:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: target/service_mart.duckdb
+      threads: 4
+

@@ -1,0 +1,11 @@
+category_id,category_name,service_group,default_priority,sla_eligible_flag
+CAT001,Access request,Digital workflow,medium,true
+CAT002,System incident,Digital workflow,high,true
+CAT003,Customer complaint,Customer contact,high,true
+CAT004,Billing query,Finance support,medium,true
+CAT005,Invoice correction,Finance support,medium,true
+CAT006,Maintenance request,Facilities support,low,true
+CAT007,Policy clarification,People support,low,false
+CAT008,Data extract request,Reporting support,medium,true
+CAT009,Data quality query,Reporting support,high,true
+CAT010,General enquiry,Customer contact,low,false

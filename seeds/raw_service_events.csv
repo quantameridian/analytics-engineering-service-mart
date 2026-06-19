@@ -1,0 +1,62 @@
+event_id,case_id,event_at,event_type,from_status,to_status,team_id,event_notes
+E0001,C0001,2026-04-01 09:12,created,,open,T001,Case opened
+E0002,C0001,2026-04-01 09:30,assigned,open,in_progress,T001,Assigned to access support
+E0003,C0001,2026-04-03 15:30,closed,in_progress,closed,T001,Resolved within SLA
+E0004,C0002,2026-04-02 10:05,created,,open,T001,Incident opened
+E0005,C0002,2026-04-02 11:00,assigned,open,in_progress,T001,Priority triage
+E0006,C0002,2026-04-02 18:40,closed,in_progress,closed,T001,Resolved same day
+E0007,C0003,2026-04-03 14:20,created,,open,T002,Complaint received
+E0008,C0003,2026-04-04 09:00,assigned,open,in_progress,T002,Assigned for review
+E0009,C0003,2026-04-08 11:10,closed,in_progress,closed,T002,Closed after SLA due date
+E0010,C0004,2026-04-04 11:45,created,,open,T003,Billing query opened
+E0011,C0004,2026-04-06 09:25,closed,open,closed,T003,Resolved within target
+E0012,C0005,2026-04-05 16:05,created,,open,T003,Invoice issue opened
+E0013,C0005,2026-04-07 10:00,status_change,open,in_progress,T003,Correction being reviewed
+E0014,C0005,2026-04-12 10:15,closed,in_progress,closed,T003,Closed late
+E0015,C0006,2026-04-07 08:40,created,,open,T004,Maintenance request logged
+E0016,C0006,2026-04-09 17:35,closed,open,closed,T004,Completed within SLA
+E0017,C0007,2026-04-08 13:30,created,,open,T005,Clarification requested
+E0018,C0007,2026-04-08 16:50,cancelled,open,cancelled,T005,Duplicate request cancelled
+E0019,C0008,2026-04-10 09:00,created,,open,T006,Data extract requested
+E0020,C0008,2026-04-12 09:30,status_change,open,in_progress,T006,Extract in progress
+E0021,C0008,2026-04-15 12:20,closed,in_progress,closed,T006,Closed late
+E0022,C0009,2026-04-12 10:30,created,,open,T006,Data quality query opened
+E0023,C0009,2026-04-16 09:00,status_change,open,in_progress,T006,Root cause review
+E0024,C0009,2026-04-18 15:00,closed,in_progress,closed,T006,Closed after target
+E0025,C0010,2026-04-14 12:10,created,,open,T002,General enquiry opened
+E0026,C0010,2026-04-14 14:00,closed,open,closed,T002,Answered same day
+E0027,C0011,2026-05-01 09:25,created,,open,T001,Access request opened
+E0028,C0011,2026-05-03 11:45,closed,open,closed,T001,Resolved within SLA
+E0029,C0012,2026-05-02 08:55,created,,open,T001,System incident opened
+E0030,C0012,2026-05-02 10:15,status_change,open,in_progress,T001,Investigation started
+E0031,C0012,2026-05-04 12:00,reopened,in_progress,open,T001,Reopened after failed check
+E0032,C0012,2026-05-06 18:20,closed,open,closed,T001,Closed late after reopen
+E0033,C0013,2026-05-03 15:10,created,,open,T002,Complaint opened
+E0034,C0013,2026-05-07 10:30,closed,open,closed,T002,Closed late
+E0035,C0014,2026-05-05 10:00,created,,open,T003,Billing query opened
+E0036,C0014,2026-05-08 09:00,status_change,open,in_progress,T003,Awaiting account evidence
+E0037,C0015,2026-05-06 13:40,created,,open,T003,Invoice correction opened
+E0038,C0015,2026-05-07 15:10,status_change,open,in_progress,T003,Correction started
+E0039,C0016,2026-05-08 11:35,created,,open,T004,Maintenance request opened
+E0040,C0016,2026-05-09 09:10,closed,open,closed,T004,Completed within SLA
+E0041,C0017,2026-05-09 09:45,created,,open,T006,Data extract opened
+E0042,C0017,2026-05-11 10:20,paused,open,paused,T006,Waiting for requester clarification
+E0043,C0018,2026-05-10 16:15,created,,open,T006,Data quality issue opened
+E0044,C0018,2026-05-12 11:00,status_change,open,in_progress,T006,Investigation started
+E0045,C0019,2026-05-12 14:50,created,,open,T005,Policy clarification opened
+E0046,C0019,2026-05-13 10:30,closed,open,closed,T005,Answered by people casework
+E0047,C0020,2026-05-15 10:05,created,,open,T002,General enquiry opened
+E0048,C0021,2026-06-01 09:30,created,,open,T001,Access request opened
+E0049,C0021,2026-06-03 09:00,status_change,open,in_progress,T001,Provisioning in progress
+E0050,C0022,2026-06-02 12:45,created,,open,T001,System incident opened
+E0051,C0022,2026-06-02 13:30,status_change,open,in_progress,T001,Investigation started
+E0052,C0023,2026-06-03 11:20,created,,open,T002,Complaint opened
+E0053,C0024,2026-06-05 08:15,created,,open,T003,Billing query opened
+E0054,C0024,2026-06-07 13:35,closed,open,closed,T003,Resolved within SLA
+E0055,C0025,2026-06-06 14:40,created,,open,T003,Invoice correction opened
+E0056,C0026,2026-06-07 09:05,created,,open,T004,Maintenance request opened
+E0057,C0026,2026-06-08 12:15,status_change,open,in_progress,T004,Technician assigned
+E0058,C0027,2026-06-09 10:50,created,,open,T006,Data extract opened
+E0059,C0028,2026-06-10 16:00,created,,open,T006,Data quality issue opened
+E0060,C0029,2026-06-11 13:20,created,,open,T005,Policy clarification opened
+E0061,C0030,2026-06-12 15:30,created,,open,T002,General enquiry opened
