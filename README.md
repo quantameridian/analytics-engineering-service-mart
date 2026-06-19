@@ -15,9 +15,10 @@ The implementation is local and reproducible. It uses synthetic seed data, SQL t
 
 If you are reviewing this quickly, start here:
 
-1. Read the source-to-mart route and facts/dimensions below.
-2. Inspect `docs/mart-output-preview.md` to see a generated sample of the final mart.
-3. Run `make qa` to seed, run, test, generate dbt docs, and refresh the mart preview.
+1. Read [docs/reviewer-guide.md](docs/reviewer-guide.md).
+2. Read the source-to-mart route and facts/dimensions below.
+3. Inspect `docs/mart-output-preview.md` to see a generated sample of the final mart.
+4. Run `make qa` to seed, run, test, generate dbt docs, and refresh the mart preview.
 
 The current GitHub Actions workflow runs dbt seed, run, test, docs generation, and preview export on every push to `main`.
 
@@ -45,6 +46,17 @@ This project shows how those questions can be supported by a clear modelling rou
 - Data tests for keys, relationships, accepted values, and metric assumptions.
 - Lineage from source extracts to management-facing outputs.
 - Documentation that separates business questions from implementation detail.
+
+## Skills demonstrated
+
+| Skill | Where to inspect |
+| --- | --- |
+| dbt project structure | `models/staging`, `models/intermediate`, and `models/marts` |
+| Dimensional modelling | `dim_team`, `dim_service_category`, `fact_case_performance`, `fact_service_event`, and `mart_service_performance` |
+| Data testing | `models/**/schema.yml` and `tests/generic` / `tests/assertions` |
+| Metric definition | [docs/metric-definitions.md](docs/metric-definitions.md) and [models/marts/schema.yml](models/marts/schema.yml) |
+| Reviewer-facing output | [docs/mart-output-preview.md](docs/mart-output-preview.md) generated from DuckDB after dbt run |
+| Security-aware public repo practice | [docs/security-posture.md](docs/security-posture.md), CI, CodeQL, Scorecard, and dependency audit |
 
 ## Architecture
 
