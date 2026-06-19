@@ -1,6 +1,8 @@
 # Analytics Engineering Service Mart
 
 [![CI](https://github.com/quantameridian/analytics-engineering-service-mart/actions/workflows/ci.yml/badge.svg)](https://github.com/quantameridian/analytics-engineering-service-mart/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/quantameridian/analytics-engineering-service-mart/actions/workflows/codeql.yml/badge.svg)](https://github.com/quantameridian/analytics-engineering-service-mart/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/quantameridian/analytics-engineering-service-mart/badge)](https://scorecard.dev/viewer/?uri=github.com/quantameridian/analytics-engineering-service-mart)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ## Project purpose
@@ -93,6 +95,7 @@ See [docs/data-dictionary.md](docs/data-dictionary.md) for field definitions, ro
 ## How to run locally
 
 Install the local dbt environment:
+Use Python 3.11 or newer; the CI security checks run on Python 3.11.
 
 ```bash
 make install
@@ -140,7 +143,10 @@ Current checks:
 - business-rule tests for non-negative cycle time, overdue classification, and SLA flag consistency;
 - metric-level tests for overdue, SLA, backlog, and cycle-time calculations.
 - mart-layer column descriptions are included for generated dbt docs review.
+- Python/dbt dependencies are audited with `make audit`.
 - GitHub Actions CI installs the local dbt/DuckDB environment and runs `dbt seed`, `dbt run`, `dbt test`, `dbt docs generate`, and the mart preview export.
+
+Security posture, warehouse credential boundaries, and public-data rules are documented in [docs/security-posture.md](docs/security-posture.md).
 
 ## Acceptance criteria
 

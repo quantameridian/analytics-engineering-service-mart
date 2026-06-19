@@ -1,12 +1,15 @@
-.PHONY: install seed run test docs preview qa build clean
+.PHONY: install audit seed run test docs preview qa build clean
 
 PYTHON ?= python3
 DBT ?= dbt
 PROFILES_DIR ?= .
 
 install:
-	$(PYTHON) -m pip install --upgrade pip setuptools wheel
+	$(PYTHON) -m pip install --upgrade 'pip>=26.1.2' setuptools wheel
 	$(PYTHON) -m pip install -e '.[dev]'
+
+audit:
+	$(PYTHON) -m pip_audit --skip-editable
 
 seed:
 	$(DBT) seed --profiles-dir $(PROFILES_DIR)
