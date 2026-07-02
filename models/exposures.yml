@@ -1,0 +1,34 @@
+version: 2
+
+exposures:
+  - name: service_performance_management_pack
+    label: Service Performance Management Pack
+    type: dashboard
+    maturity: medium
+    description: >
+      Planned management reporting pack consuming the tested service performance
+      mart for headline workload, overdue, SLA, and cycle-time measures.
+    depends_on:
+      - ref('mart_service_performance')
+      - ref('dim_team')
+      - ref('dim_service_category')
+    owner:
+      name: Reporting Lead
+      email: reporting-lead@example.com
+
+  - name: service_performance_drillthrough_dataset
+    label: Service Performance Drillthrough Dataset
+    type: application
+    maturity: medium
+    description: >
+      Planned detail-level consumer for case drillthrough and lifecycle audit
+      review. It depends on the case and event facts rather than recalculating
+      lifecycle logic in a BI layer.
+    depends_on:
+      - ref('fact_case_performance')
+      - ref('fact_service_event')
+      - ref('dim_team')
+      - ref('dim_service_category')
+    owner:
+      name: Analytics Engineering Owner
+      email: analytics-owner@example.com

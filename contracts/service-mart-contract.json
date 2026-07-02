@@ -1,0 +1,118 @@
+{
+  "contract_name": "service_performance_mart_contract",
+  "contract_version": "1.0.0",
+  "status": "portfolio_synthetic_contract",
+  "owner_role": "Analytics engineering owner",
+  "warehouse_mode": "local_duckdb_only",
+  "source_files": {
+    "seeds/raw_cases.csv": {
+      "row_count": 30,
+      "columns": [
+        "case_id",
+        "case_reference",
+        "opened_at",
+        "closed_at",
+        "current_status",
+        "priority",
+        "team_id",
+        "category_id",
+        "request_channel",
+        "customer_segment",
+        "sla_due_at",
+        "reporting_period"
+      ]
+    },
+    "seeds/raw_teams.csv": {
+      "row_count": 7,
+      "columns": [
+        "team_id",
+        "team_name",
+        "reporting_unit",
+        "service_area",
+        "team_lead",
+        "active_flag",
+        "effective_from",
+        "effective_to"
+      ]
+    },
+    "seeds/raw_service_events.csv": {
+      "row_count": 61,
+      "columns": [
+        "event_id",
+        "case_id",
+        "event_at",
+        "event_type",
+        "from_status",
+        "to_status",
+        "team_id",
+        "event_notes"
+      ]
+    },
+    "seeds/raw_case_categories.csv": {
+      "row_count": 10,
+      "columns": [
+        "category_id",
+        "category_name",
+        "service_group",
+        "default_priority",
+        "sla_eligible_flag"
+      ]
+    },
+    "seeds/raw_targets.csv": {
+      "row_count": 10,
+      "columns": [
+        "target_id",
+        "category_id",
+        "priority",
+        "sla_hours",
+        "target_met_rate",
+        "active_from",
+        "active_to"
+      ]
+    }
+  },
+  "published_models": [
+    {
+      "name": "dim_team",
+      "grain": "one row per team"
+    },
+    {
+      "name": "dim_service_category",
+      "grain": "one row per service category"
+    },
+    {
+      "name": "fact_case_performance",
+      "grain": "one row per case"
+    },
+    {
+      "name": "fact_service_event",
+      "grain": "one row per case event"
+    },
+    {
+      "name": "mart_service_performance",
+      "grain": "one row per reporting period, team, and category"
+    }
+  ],
+  "exposures": [
+    "service_performance_management_pack",
+    "service_performance_drillthrough_dataset"
+  ],
+  "quality_gates": [
+    "dbt seed completes against local DuckDB",
+    "dbt run builds staging, intermediate, and mart models",
+    "dbt test passes relationship, uniqueness, accepted-value, grain, and business-rule checks",
+    "dbt docs generate includes exposures and documented marts",
+    "mart preview is regenerated from target/service_mart.duckdb"
+  ],
+  "public_data_boundary": {
+    "synthetic_only": true,
+    "must_not_contain": [
+      "warehouse credentials",
+      "production profiles.yml",
+      "private source extracts",
+      "customer data",
+      "employer data",
+      "compiled target artifacts"
+    ]
+  }
+}

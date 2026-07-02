@@ -1,4 +1,4 @@
-.PHONY: install audit seed run test docs preview qa build clean
+.PHONY: install audit validate-contract seed run test docs preview qa build clean
 
 PYTHON ?= python3
 DBT ?= dbt
@@ -10,6 +10,9 @@ install:
 
 audit:
 	$(PYTHON) -m pip_audit --skip-editable
+
+validate-contract:
+	$(PYTHON) scripts/validate_service_mart_contract.py
 
 seed:
 	$(DBT) seed --profiles-dir $(PROFILES_DIR)
@@ -26,7 +29,7 @@ docs:
 preview:
 	$(PYTHON) scripts/export_mart_preview.py
 
-qa: seed run test docs preview
+qa: validate-contract seed run test docs preview
 
 build:
 	$(DBT) build --profiles-dir $(PROFILES_DIR)
