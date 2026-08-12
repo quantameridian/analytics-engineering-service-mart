@@ -5,7 +5,7 @@ It omits timestamps and invocation identifiers so that unchanged builds remain s
 
 ## Runtime
 
-- dbt Core: `1.12.1`
+- dbt Core: `1.11.13`
 - Adapter: `dbt-duckdb 1.11.0`
 - Report date: `2026-06-19`
 - Event lookback: `7 days`
