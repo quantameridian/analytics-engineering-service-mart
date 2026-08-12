@@ -1,37 +1,51 @@
 # Reviewer Guide
 
-This guide is for an external reviewer who wants to understand what the repo proves without reading every SQL file first. It points to the modelling choices, tests, contract, and generated mart preview that carry the portfolio evidence.
+This route is designed for a technical review that has ten to fifteen minutes.
+It starts with the result, then follows one business rule through SQL, tests, and
+build evidence.
 
-## What To Review First
+## Ten Minute Route
 
-1. [README.md](../README.md) for the service reporting problem and model route.
-2. [docs/data-lineage.md](data-lineage.md) for source to mart lineage.
-3. [docs/metric-definitions.md](metric-definitions.md) for metric grain and calculation intent.
-4. [contracts/service-mart-contract.json](../contracts/service-mart-contract.json) for source, mart, exposure, and quality gate expectations.
-5. [models/exposures.yml](../models/exposures.yml) for dbt downstream usage.
-6. [docs/commercial-review-scorecard.md](commercial-review-scorecard.md) for the plain assessment of the repo.
-7. [models/marts/schema.yml](../models/marts/schema.yml) for mart descriptions, tests, and column documentation.
-8. [docs/mart-output-preview.md](mart-output-preview.md) for a generated sample of the final mart.
+1. Read [mart-output-preview.md](mart-output-preview.md) to see the published grain and metrics.
+2. Read [metric-definitions.md](metric-definitions.md) to confirm cohort, cutoff, numerator, and denominator semantics.
+3. Follow `raw_cases` through `stg_cases`, `int_case_lifecycle`, `int_service_sla_status`, and `fact_case_performance`.
+4. Review the SLA edge cases in `models/intermediate/schema.yml`.
+5. Review contracts and data types in `models/marts/schema.yml`.
+6. Read [build-evidence.md](build-evidence.md) for parsed resources, materializations, and build results.
 
-## What This Repository Proves
+## What To Challenge
 
-| Skill | Evidence |
+The central design decision is that `reporting_period` means case opening month.
+The mart shows the later state of each intake cohort at one report date. Ask
+whether that grain answers the intended management question before judging any
+rate or trend.
+
+The second decision is the SLA denominator. An eligible case is not automatically
+measurable. A due time and an effective target must also be present. Reviewers can
+trace excluded rows through `sla_measurement_status`,
+`missing_sla_due_case_count`, and `missing_target_case_count`.
+
+The event fact provides the operational engineering example. It loads
+incrementally by `event_id`, rereads a seven day event window, rejects schema
+changes, and is checked for idempotency after the full build. This is a useful
+local control, but it does not prove high volume performance or recovery in a
+distributed warehouse.
+
+## Evidence By Question
+
+| Question | Evidence |
 | --- | --- |
-| dbt modelling | Staging, intermediate, fact, dimension, and mart layers are separated |
-| Dimensional modelling | Team/category dimensions, case/event facts, and period/team/category aggregate mart |
-| Contract delivery | Source shape, published marts, exposures, and quality gates are captured in a tested contract |
-| Downstream dependency design | dbt exposures declare planned dashboard and drillthrough consumers |
-| Data testing | 101 dbt tests cover keys, accepted values, relationships, grain, and business rules |
-| Metric design | SLA, overdue, backlog, cycle time, and service performance metrics are documented |
-| Public repo hygiene | CI, dbt docs generation, preview export, dependency audit, CodeQL, Scorecard, and security docs are present |
+| Is model grain explicit? | Mart schema descriptions and grain assertion tests |
+| Can metrics reconcile to detail? | `assert_mart_reconciles_to_case_fact.sql` |
+| Are SLA edge cases executable? | `classify_sla_measurement_edges` unit test |
+| Can target history duplicate a case? | Effective date join plus overlap test |
+| Are published schemas governed? | Enforced contracts with a type for every column |
+| Is incremental loading repeatable? | `verify_incremental_idempotency.py` |
+| Does CI run the same route? | `make qa` in `.github/workflows/ci.yml` |
+| Are outputs derived rather than typed? | Preview and build evidence scripts |
+| Are credentials or private data required? | Local DuckDB profile and synthetic seeds |
 
-## Portfolio Reading
-
-The strongest evidence is the route from raw seeds to a tested mart. Review `seeds/`, then follow the SQL through `models/staging`, `models/intermediate`, and `models/marts`. Finish with `docs/mart-output-preview.md`, which is generated from the local run. That path is the core of the repo. It should be judged as analytics engineering evidence, not as a claim of live warehouse operation.
-
-## Fast Local Review
-
-Use Python 3.11 or newer.
+## Run The Review
 
 ```bash
 make install
@@ -39,30 +53,14 @@ make audit
 make qa
 ```
 
-Expected result:
+A successful run ends with an unchanged event fact hash. The committed preview
+and build evidence should match regenerated output. A diff means either the model
+behaviour changed or generated evidence was not refreshed.
 
-- dependency audit reports no known vulnerabilities;
-- seeds load into local DuckDB;
-- dbt models build successfully;
-- dbt tests pass;
-- dbt docs are generated under `target/`;
-- `docs/mart-output-preview.md` is refreshed.
+## Scope
 
-## Good Reviewer Questions
-
-- Is the mart grain obvious?
-- Are lifecycle and SLA calculations traceable back to source seeds?
-- Do tests guard both technical validity and business assumptions?
-- Could the models be ported from DuckDB to a warehouse with limited changes?
-- Are the local profile and credential boundaries clear?
-
-## Current Limitations
-
-- Local DuckDB only.
-- Synthetic data only.
-- No cloud warehouse deployment evidence.
-- No BI dashboard consuming the mart yet.
-
-## Strongest Interview Angle
-
-Use this repo to discuss model grain, test coverage, metric definitions, and how dbt can make reporting logic reviewable before a BI layer is built.
+The repository proves local dbt model design, SQL business rules, contracts,
+testing, lineage, and repeatable execution. It does not prove warehouse identity,
+deployment, source freshness, cost control, large data performance, or a live BI
+consumer. Those gaps are stated in [limitations.md](limitations.md), not hidden in
+the implementation.

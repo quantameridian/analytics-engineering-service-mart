@@ -30,6 +30,7 @@ lifecycle as (
         cases.closed_at,
         cases.sla_due_at,
         cases.reporting_period,
+        {{ report_date() }} as report_date,
         event_rollup.first_created_event_at,
         event_rollup.first_assigned_event_at,
         event_rollup.first_paused_event_at,
@@ -52,7 +53,7 @@ lifecycle as (
         end as cycle_time_days,
         case
             when current_status in ('open', 'in_progress', 'paused')
-                then date_diff('day', cast(opened_at as date), date '2026-06-19')
+                then date_diff('day', cast(opened_at as date), {{ report_date() }})
             else null
         end as age_days_at_report_date
     from cases
@@ -61,4 +62,3 @@ lifecycle as (
 )
 
 select * from lifecycle
-

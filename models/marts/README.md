@@ -1,4 +1,4 @@
 # Mart Models
 
-Mart models will expose facts, dimensions, and management-facing service performance tables.
-
+These contracted relations publish team and category dimensions, case and event
+facts, and the service performance cohort mart.

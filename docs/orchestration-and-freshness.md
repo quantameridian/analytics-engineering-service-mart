@@ -1,57 +1,49 @@
-# Orchestration and Freshness
+# Orchestration And Freshness
 
-## Purpose
+The local build is a controlled batch, not a deployed scheduler. `make qa` defines
+the dependency order and GitHub Actions runs the same command for every pull
+request and main branch update.
 
-This document defines the orchestration and freshness expectations for the local
-service mart. It is not a claim that a production scheduler exists. It explains
-what would need to happen before this local dbt project became a controlled
-pipeline.
+## Controlled Run
 
-## Current Local Flow
+| Order | Gate | Blocking condition |
+| ---: | --- | --- |
+| 1 | Validate source and model contract | Header, row count, variable, exposure, or contract mismatch |
+| 2 | Lint Python scripts | Ruff violation |
+| 3 | Clean local target | Stale database or dbt artifact remains |
+| 4 | Full dbt build | Seed, model, unit test, data test, or contract failure |
+| 5 | Generate catalog | Model cannot be described from the built database |
+| 6 | Export preview and evidence | Published output or artifact metadata cannot be read |
+| 7 | Rerun event fact | Incremental output count or content changes without input |
 
-| Step | Command | Evidence |
+Publication stops on any nonzero command. CI then uploads the manifest, catalog,
+run results, preview, and evidence only after the complete gate succeeds.
+
+## Failure Ownership
+
+| Failure | Investigation | Decision |
 | --- | --- | --- |
-| Validate contract | `make validate-contract` | Seed headers and row counts match `contracts/service-mart-contract.json` |
-| Load source extracts | `make seed` | Synthetic seeds are loaded into local DuckDB |
-| Build models | `make run` | Staging, intermediate, facts, dimensions, and mart are built |
-| Test models | `make test` | dbt tests pass for keys, relationships, accepted values, grain, and business rules |
-| Generate docs | `make docs` | dbt documentation includes models and exposures |
-| Export preview | `make preview` | `docs/mart-output-preview.md` is regenerated from DuckDB |
+| Source contract | Compare extract header and count with approved change | Correct input or review a contract version change |
+| Relationship or grain | Trace offending keys through staging and intermediate models | Hold mart publication |
+| SLA unit rule | Compare expected measurement state with policy | Agree rule with metric owner before changing SQL |
+| Model contract | Review downstream effect of column or type change | Version and communicate breaking change |
+| Reconciliation | Compare case fact groups with mart groups | Hold aggregate output |
+| Incremental hash | Inspect duplicate keys, merge strategy, and lookback | Full refresh and resolve load behaviour |
 
-## Schedule Pattern To Add Later
+## Production Mapping
 
-| Stage | What should happen | Current evidence |
-| --- | --- | --- |
-| Source receipt | Confirm files or tables arrived before transformation starts | Seed contract and row count validation |
-| Freshness check | Confirm source data is inside the agreed reporting window | Documented target state; not implemented because seeds are static |
-| Transform | Run dbt models after source gates pass | `dbt run` in local DuckDB |
-| Test | Block publication on failed critical tests | `dbt test` in `make qa` and CI |
-| Publish | Expose mart to BI/reporting consumers | dbt exposures in `models/exposures.yml` |
-| Observe | Record run status, failures, and owner actions | Not implemented; target runbook below |
+A warehouse implementation needs controls that static seeds cannot provide:
 
-## Freshness Rules To Implement In A Warehouse Version
+| Concern | Required production evidence |
+| --- | --- |
+| Source arrival | Loaded timestamp, expected cadence, and missing delivery alert |
+| Freshness | dbt source freshness or equivalent checks against agreed limits |
+| Identity | Service account with least privilege and audited secret rotation |
+| Deployment | Separate development and production targets with approval history |
+| Recovery | Retry policy, full refresh procedure, and tested backfill window |
+| Observability | Run duration, row movement, test failure, and owner notification |
+| Scale | Warehouse query plans, representative volumes, and cost measurements |
 
-| Source | Freshness expectation | Failure response |
-| --- | --- | --- |
-| Case header extract | Source loaded for the reporting period before mart build | Hold headline workload publication |
-| Team reference | Active team reference reviewed before reporting cycle | Caveat ownership breakdowns |
-| Service event extract | Event history loaded through reporting cutoff | Hold lifecycle and SLA movement commentary |
-| Category reference | Category values approved before transform | Caveat category comparisons |
-| SLA target reference | Target rows approved before transform | Caveat SLA and target rate metrics |
-
-## Failure Triage
-
-| Failure | First check | Owner action |
-| --- | --- | --- |
-| Seed load fails | Contract headers and row counts | Fix extract or update contract with approval |
-| Relationship test fails | Missing key in source or reference | Assign source owner correction |
-| Grain test fails | Duplicate source case or aggregation issue | Block publication until duplicate route is agreed |
-| SLA assertion fails | Target logic or status edge case | Review model logic with KPI owner |
-| Exposure docs missing | dbt docs did not include downstream usage | Fix `models/exposures.yml` before review |
-
-## Limitation
-
-The repository does not yet include Airflow, Dagster, Prefect, or cloud
-warehouse deployment code. That is a deliberate boundary. The repo currently
-shows local analytics engineering discipline. A scheduler would be the next
-upgrade if this repo needs to show platform operations.
+The static contract proves source fixture stability, not operational freshness.
+No freshness percentage, service level, or recovery time is claimed by this
+repository.

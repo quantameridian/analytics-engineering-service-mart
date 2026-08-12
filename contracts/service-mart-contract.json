@@ -1,9 +1,14 @@
 {
   "contract_name": "service_performance_mart_contract",
-  "contract_version": "1.0.0",
-  "status": "portfolio_synthetic_contract",
+  "contract_version": "2.0.0",
+  "status": "active_synthetic_reference",
   "owner_role": "Analytics engineering owner",
   "warehouse_mode": "local_duckdb_only",
+  "reporting_context": {
+    "report_date": "2026-06-19",
+    "period_semantics": "month in which the case opened",
+    "event_lookback_days": 7
+  },
   "source_files": {
     "seeds/raw_cases.csv": {
       "row_count": 30,
@@ -74,23 +79,28 @@
   "published_models": [
     {
       "name": "dim_team",
-      "grain": "one row per team"
+      "grain": "one row per team",
+      "materialization": "table"
     },
     {
       "name": "dim_service_category",
-      "grain": "one row per service category"
+      "grain": "one row per service category",
+      "materialization": "table"
     },
     {
       "name": "fact_case_performance",
-      "grain": "one row per case"
+      "grain": "one row per case",
+      "materialization": "table"
     },
     {
       "name": "fact_service_event",
-      "grain": "one row per case event"
+      "grain": "one row per case event",
+      "materialization": "incremental"
     },
     {
       "name": "mart_service_performance",
-      "grain": "one row per reporting period, team, and category"
+      "grain": "one row per case opening month, report date, team, and category",
+      "materialization": "table"
     }
   ],
   "exposures": [
@@ -98,11 +108,11 @@
     "service_performance_drillthrough_dataset"
   ],
   "quality_gates": [
-    "dbt seed completes against local DuckDB",
-    "dbt run builds staging, intermediate, and mart models",
-    "dbt test passes relationship, uniqueness, accepted-value, grain, and business-rule checks",
-    "dbt docs generate includes exposures and documented marts",
-    "mart preview is regenerated from target/service_mart.duckdb"
+    "source files match their controlled headers and row counts",
+    "dbt build enforces published model schemas and executes unit and data tests",
+    "the incremental event fact produces the same rows when rerun without new input",
+    "dbt docs include published models and declared consumers",
+    "mart preview and build evidence are regenerated from the completed build"
   ],
   "public_data_boundary": {
     "synthetic_only": true,

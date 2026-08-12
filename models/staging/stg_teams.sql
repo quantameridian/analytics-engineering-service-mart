@@ -16,11 +16,10 @@ renamed as (
         end as active_flag,
         cast(effective_from as date) as effective_from,
         case
-            when effective_to is null or effective_to = '' then null
+            when effective_to is null or cast(effective_to as varchar) = '' then null
             else cast(effective_to as date)
         end as effective_to
     from source
 )
 
 select * from renamed
-

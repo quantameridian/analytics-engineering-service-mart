@@ -17,4 +17,10 @@ select
     latest_event_at,
     event_notes
 from events
-
+{% if is_incremental() %}
+where event_at >= (
+    select coalesce(max(event_at), timestamp '1900-01-01 00:00:00')
+        - interval '{{ var("event_lookback_days") }} days'
+    from {{ this }}
+)
+{% endif %}

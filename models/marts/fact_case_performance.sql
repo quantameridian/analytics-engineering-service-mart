@@ -14,6 +14,7 @@ select
     closed_at,
     sla_due_at,
     reporting_period,
+    report_date,
     is_open_active,
     is_paused,
     is_closed,
@@ -21,6 +22,9 @@ select
     was_reopened,
     was_paused,
     is_sla_eligible,
+    has_sla_due_at,
+    has_matched_target,
+    sla_measurement_status,
     is_overdue,
     paused_past_sla_due,
     sla_met_flag,
@@ -30,4 +34,3 @@ select
     cycle_time_days,
     age_days_at_report_date
 from sla_status
-

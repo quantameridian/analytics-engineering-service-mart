@@ -30,17 +30,18 @@ jobs:
       - name: Audit Python dependencies
         run: make audit PYTHON=python
 
-      - name: Load seed data
-        run: make seed DBT=dbt PROFILES_DIR=.
+      - name: Run the full quality gate
+        run: make qa PYTHON=python DBT=dbt PROFILES_DIR=.
 
-      - name: Run dbt models
-        run: make run DBT=dbt PROFILES_DIR=.
-
-      - name: Run dbt tests
-        run: make test DBT=dbt PROFILES_DIR=.
-
-      - name: Generate dbt docs
-        run: make docs DBT=dbt PROFILES_DIR=.
-
-      - name: Export mart preview
-        run: make preview PYTHON=python
+      - name: Upload review artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: service-mart-build-evidence
+          path: |
+            target/manifest.json
+            target/catalog.json
+            target/run_results.json
+            docs/mart-output-preview.md
+            docs/build-evidence.md
+          if-no-files-found: error
+          retention-days: 7

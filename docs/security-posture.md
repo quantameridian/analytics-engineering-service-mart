@@ -2,14 +2,14 @@
 
 ## Scope
 
-This is a public portfolio repository using synthetic dbt seed data and a local
+This is a public repository using synthetic dbt seed data and a local
 DuckDB profile. All committed files must be safe for public review. The project
 must not contain real warehouse credentials, client data, employer data, private
 source extracts, or internal system names.
 
 ## Current Controls
 
-- GitHub Actions CI uses read-only repository contents permission.
+- GitHub Actions CI uses read only repository contents permission.
 - Python dependency checks target Python 3.11 or newer so fixed tooling
   versions are installable.
 - Python/dbt dependencies are audited in CI with `pip-audit`.
@@ -21,9 +21,9 @@ source extracts, or internal system names.
 
 ## Data and Credential Boundary
 
-The committed profile is local-only and writes to DuckDB under `target/`. The
-sample data is synthetic and non-client. A production warehouse profile should
-use environment variables or a secret manager and should not be committed.
+The committed profile runs locally and writes to DuckDB under `target/`. The
+sample data is synthetic. Production credentials belong in environment variables
+or a secret manager and must not be committed.
 
 Do not commit:
 
@@ -42,11 +42,10 @@ These controls live in GitHub repository settings rather than source files:
 - branch protection or repository rulesets for `main`;
 - required CI checks before merging;
 - blocked force pushes and branch deletion;
-- default workflow token permission set to read-only.
+- default workflow token permission set to read only.
 
 ## Residual Risk
 
-This project demonstrates local analytics engineering patterns. It does not prove
-cloud warehouse IAM, production data access control, row-level security, or
-deployment hardening. Security review should focus on dependency hygiene,
-credential boundaries, synthetic-data discipline, and source-to-output clarity.
+The controls cover the public code and local build. They do not cover warehouse
+identity, production access control, row level security, or deployment hardening.
+Those controls belong to the target platform and need separate evidence.
