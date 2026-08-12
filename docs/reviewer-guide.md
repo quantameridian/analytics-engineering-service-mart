@@ -6,12 +6,12 @@ build evidence.
 
 ## Ten Minute Route
 
-1. Read [mart-output-preview.md](mart-output-preview.md) to see the published grain and metrics.
-2. Read [metric-definitions.md](metric-definitions.md) to confirm cohort, cutoff, numerator, and denominator semantics.
+1. Read the [mart preview](mart-output-preview.md) to see the published grain and metrics.
+2. Read the [metric definitions](metric-definitions.md) to confirm cohort, cutoff, numerator, and denominator semantics.
 3. Follow `raw_cases` through `stg_cases`, `int_case_lifecycle`, `int_service_sla_status`, and `fact_case_performance`.
 4. Review the SLA edge cases in `models/intermediate/schema.yml`.
 5. Review contracts and data types in `models/marts/schema.yml`.
-6. Read [build-evidence.md](build-evidence.md) for parsed resources, materializations, and build results.
+6. Read the [build evidence](build-evidence.md) for parsed resources, materializations, and build results.
 
 ## What To Challenge
 

@@ -1,6 +1,6 @@
 ---
 name: Improvement
-about: Suggest a commercial-readiness, documentation, or technical improvement
+about: Suggest a documentation, data model, or technical improvement
 title: "[Improvement]: "
 labels: enhancement
 assignees: ""
@@ -12,4 +12,4 @@ assignees: ""
 
 ## Acceptance criteria
 
-## Risks or trade-offs
+## Risks or tradeoffs
