@@ -1,67 +1,66 @@
 # Metric Definitions
 
-## Purpose
+Every aggregate row represents cases opened in one month for one team and one
+category. Case status, age, and overdue state are evaluated at the configured
+report date. This cohort view is useful for comparing how successive intake
+months mature. It must not be described as a month end backlog snapshot.
 
-This document defines the first metric set the service mart should support. Metrics are illustrative and should be treated as modelling requirements, not benchmark targets.
+## Counting Rules
 
-## Implemented metrics
+| Metric | Calculation | Important exclusion |
+| --- | --- | --- |
+| `case_count` | Count of cases in the cohort | None |
+| `closed_case_count` | Cohort cases with closed status at cutoff | Cancelled cases |
+| `open_case_count` | Cohort cases with open or in progress status | Paused, closed, cancelled |
+| `overdue_open_case_count` | Active, eligible cases past due at cutoff | Paused, ineligible, or missing due time |
+| `paused_case_count` | Cohort cases paused at cutoff | All other statuses |
+| `reopened_case_count` | Cohort cases with a reopen event | No inference from current status |
+| `sla_eligible_case_count` | Cases in categories governed by an SLA | Categories outside SLA scope |
+| `sla_measured_case_count` | Eligible cases with due time and effective target | Missing due time or target |
+| `closed_sla_measured_case_count` | Closed measured cases | Open, cancelled, and excluded cases |
+| `sla_met_case_count` | Closed measured cases completed by due time | Closed cases outside denominator |
+| `missing_sla_due_case_count` | Eligible cases without a due time | Ineligible categories |
+| `missing_target_case_count` | Eligible cases with a due time but no effective target | Ineligible cases and missing due times |
 
-| Metric | Definition | Model | Grain |
+## Rate Rules
+
+| Rate | Numerator | Denominator | Null rule |
 | --- | --- | --- | --- |
-| Case count | Count of cases in the reporting period/team/category group | `mart_service_performance.case_count` | Reporting period, team, category |
-| Open cases | Count of cases flagged as active open work | `mart_service_performance.open_case_count` | Reporting period, team, category |
-| Closed cases | Count of cases with closed status | `mart_service_performance.closed_case_count` | Reporting period, team, category |
-| Overdue open cases | Count of active open cases with SLA due date before the report date | `mart_service_performance.overdue_open_case_count` | Reporting period, team, category |
-| Paused cases | Count of cases currently paused | `mart_service_performance.paused_case_count` | Reporting period, team, category |
-| Reopened cases | Count of cases with at least one reopen event | `mart_service_performance.reopened_case_count` | Reporting period, team, category |
-| SLA eligible cases | Count of cases where the category and due date make SLA assessment possible | `mart_service_performance.sla_eligible_case_count` | Reporting period, team, category |
-| Closed SLA eligible cases | Count of closed cases that are SLA eligible | `mart_service_performance.closed_sla_eligible_case_count` | Reporting period, team, category |
-| SLA met cases | Count of closed SLA-eligible cases closed by the SLA due timestamp | `mart_service_performance.sla_met_case_count` | Reporting period, team, category |
-| SLA met rate | SLA met cases divided by closed SLA-eligible cases | `mart_service_performance.sla_met_rate` | Reporting period, team, category |
-| Average cycle time | Average calendar days between opened and closed timestamps for closed cases | `mart_service_performance.average_cycle_time_days` | Reporting period, team, category |
-| Median cycle time | Median calendar days between opened and closed timestamps for closed cases | `mart_service_performance.median_cycle_time_days` | Reporting period, team, category |
-| Average open age | Average age in days for active or paused cases at the report date | `mart_service_performance.average_open_age_days` | Reporting period, team, category |
-| Overdue share | Overdue open cases divided by total cases in the group | `mart_service_performance.overdue_share` | Reporting period, team, category |
+| `sla_met_rate` | `sla_met_case_count` | `closed_sla_measured_case_count` | Null when denominator is zero |
+| `overdue_open_rate` | `overdue_open_case_count` | `open_case_count` | Null when denominator is zero |
+| `average_sla_target_rate` | Sum of applicable target rates for closed measured cases | Closed measured cases | Null when none are measured and closed |
+| `sla_target_variance` | `sla_met_rate - average_sla_target_rate` | Not applicable | Null when either input is null |
 
-## Metric assumptions
+An SLA rate of `0.8` therefore means four out of five closed cases with complete
+measurement inputs met their due time. It does not mean four out of five eligible
+cases, all closed cases, or all cases.
 
-- Cancelled cases should not count as closed cases.
-- Open backlog should exclude cancelled cases.
-- SLA met rate should use only SLA-eligible cases in the denominator.
-- Cycle time should be calculated only for closed cases.
-- Reopened cases should be identifiable from event history rather than inferred only from current status.
-- Reporting period should be derived consistently from dates, not manually assigned in the mart.
-- The current seed data includes one case per reporting period/team/category group, so aggregate rates are valid but intentionally sparse.
+## Duration Rules
 
-## Acceptance checks for metrics
+`cycle_time_days` is the calendar day difference between open and close for a
+closed case. The mart publishes its mean and median because a small number of slow
+cases can pull the mean away from a typical result.
 
-- Metric SQL matches the definitions in this document.
-- Numerators and denominators are documented for rate metrics.
-- Edge cases such as cancelled cases and missing close dates are handled explicitly.
-- Tests confirm that model grain does not duplicate cases in aggregate outputs.
-- The final mart includes enough fields to reproduce headline KPI values.
+`age_days_at_report_date` is the calendar day difference between open date and
+report date for open, in progress, or paused cases. Closed and cancelled cases
+have no open age.
 
-## Numerators and Denominators
+## Target Rules
 
-| Rate metric | Numerator | Denominator | Null handling |
-| --- | --- | --- | --- |
-| `sla_met_rate` | Closed SLA-eligible cases where `sla_met_flag = true` | Closed SLA-eligible cases | Null when there are no closed SLA-eligible cases |
-| `overdue_share` | Cases flagged as overdue | All cases in the reporting period/team/category group | Null only if the group has no cases, which should not occur in the current mart grain |
+A target matches when category and priority agree and the case open date falls
+between `active_from` and `active_to`, including both boundary dates. A blank
+`active_to` remains open ended. The overlap assertion prevents two target rows
+from matching the same category, priority, and date.
+
+The source due time remains the deadline used for met and overdue logic. A case
+with a due time can therefore be overdue even when its target reference is
+missing, but it stays outside the SLA rate. The target row supplies governance
+context, expected hours, and target rate. This split keeps the operational breach
+visible without inventing target context from incomplete reference data.
 
 ## Traceability
 
-- Case-level metric inputs are visible in `fact_case_performance`.
-- Event-level lifecycle evidence is visible in `fact_service_event`.
-- Aggregated KPI fields are visible in `mart_service_performance`.
-- dbt tests check uniqueness, relationships, accepted values, non-negative durations, SLA flag consistency, and mart grain uniqueness.
-
-## Intended BI and Power BI use
-
-The mart layer is designed so a BI tool can connect to:
-
-- `mart_service_performance` for headline KPI cards, trend charts, team/category comparisons, and SLA rate reporting;
-- `fact_case_performance` for drill-through from aggregate measures to individual cases;
-- `fact_service_event` for lifecycle audit trails and event-level analysis;
-- `dim_team` and `dim_service_category` for slicers and consistent reporting labels.
-
-Power BI should not need to recreate lifecycle, SLA, or overdue logic in DAX. DAX can focus on presentation measures over the tested mart outputs.
+Case inputs and exclusion reasons are in `fact_case_performance`. Ordered events
+are in `fact_service_event`. Aggregate values are in
+`mart_service_performance`. The reconciliation assertion rebuilds the principal
+counts from the case fact and compares every cohort key.

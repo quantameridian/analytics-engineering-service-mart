@@ -8,7 +8,7 @@ renamed as (
         case_reference,
         cast(opened_at as timestamp) as opened_at,
         case
-            when closed_at is null or closed_at = '' then null
+            when closed_at is null or cast(closed_at as varchar) = '' then null
             else cast(closed_at as timestamp)
         end as closed_at,
         lower(current_status) as current_status,
@@ -18,12 +18,11 @@ renamed as (
         lower(request_channel) as request_channel,
         lower(customer_segment) as customer_segment,
         case
-            when sla_due_at is null or sla_due_at = '' then null
+            when sla_due_at is null or cast(sla_due_at as varchar) = '' then null
             else cast(sla_due_at as timestamp)
         end as sla_due_at,
-        reporting_period
+        cast(strptime(reporting_period || '-01', '%Y-%m-%d') as date) as reporting_period
     from source
 )
 
 select * from renamed
-

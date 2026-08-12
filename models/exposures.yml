@@ -6,8 +6,9 @@ exposures:
     type: dashboard
     maturity: medium
     description: >
-      Planned management reporting pack consuming the tested service performance
-      mart for headline workload, overdue, SLA, and cycle-time measures.
+      Reference management view over the tested cohort mart. It uses the
+      published workload, overdue, SLA, and cycle time measures without
+      rebuilding them in a reporting tool.
     depends_on:
       - ref('mart_service_performance')
       - ref('dim_team')
@@ -21,9 +22,9 @@ exposures:
     type: application
     maturity: medium
     description: >
-      Planned detail-level consumer for case drillthrough and lifecycle audit
-      review. It depends on the case and event facts rather than recalculating
-      lifecycle logic in a BI layer.
+      Reference detail view for case investigation and lifecycle audit. It
+      depends on the case and event facts so that operational logic remains in
+      the governed dbt models.
     depends_on:
       - ref('fact_case_performance')
       - ref('fact_service_event')

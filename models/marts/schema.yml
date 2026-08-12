@@ -2,51 +2,66 @@ version: 2
 
 models:
   - name: dim_team
-    description: Team dimension for reporting ownership and service-area grouping.
+    description: Current team reference used for ownership and service area reporting.
+    config:
+      contract:
+        enforced: true
     columns:
       - name: team_id
-        description: Stable synthetic team key used to join facts to team ownership.
-        tests:
-          - not_null
-          - unique
+        data_type: varchar
+        description: Stable team key.
+        data_tests: [not_null, unique]
       - name: team_name
-        description: Human-readable team label for management reporting.
+        data_type: varchar
+        description: Team label used in reports.
       - name: reporting_unit
-        description: Higher-level reporting group used for service performance review.
+        data_type: varchar
+        description: Management unit that owns the team.
       - name: service_area
-        description: Broad service area represented by the team.
+        data_type: varchar
+        description: Service area covered by the team.
       - name: team_lead
-        description: Synthetic role/name representing accountable team leadership.
+        data_type: varchar
+        description: Synthetic accountable lead.
       - name: active_flag
-        description: Indicates whether the team is currently active for reporting.
-        tests:
+        data_type: boolean
+        description: Whether the team is active at the source reference date.
+        data_tests:
           - not_null
           - accepted_values:
               arguments:
                 values: [true, false]
                 quote: false
       - name: effective_from
-        description: Start date for the team reference row.
+        data_type: date
+        description: First date for which the reference row applies.
       - name: effective_to
-        description: End date for the team reference row when no longer active.
+        data_type: date
+        description: Final date for which the reference row applies, when present.
 
   - name: dim_service_category
-    description: Service category dimension for workload and SLA grouping.
+    description: Service category reference used for workload and SLA analysis.
+    config:
+      contract:
+        enforced: true
     columns:
       - name: category_id
-        description: Stable synthetic service category key.
-        tests:
-          - not_null
-          - unique
+        data_type: varchar
+        description: Stable service category key.
+        data_tests: [not_null, unique]
       - name: category_name
-        description: Human-readable category label used in service reporting.
+        data_type: varchar
+        description: Category label used in reports.
       - name: service_group
-        description: Higher-level grouping for related service categories.
+        data_type: varchar
+        description: Group used to compare related categories.
       - name: default_priority
-        description: Default priority assigned to the category before case-level override.
+        data_type: varchar
+        description: Default priority before a case level override.
       - name: sla_eligible_flag
-        description: Indicates whether cases in this category are normally SLA eligible.
-        tests:
+        data_type: boolean
+        description: Whether the category is governed by an SLA.
+        data_tests:
           - not_null
           - accepted_values:
               arguments:
@@ -54,174 +69,286 @@ models:
                 quote: false
 
   - name: fact_service_event
-    description: Event-level fact table preserving service event history and sequence.
+    description: Ordered service event history at one row per event.
+    config:
+      materialized: incremental
+      unique_key: event_id
+      incremental_strategy: delete+insert
+      on_schema_change: fail
+      contract:
+        enforced: true
     columns:
       - name: event_id
-        description: Stable synthetic event key.
-        tests:
-          - not_null
-          - unique
+        data_type: varchar
+        description: Stable event key.
+        data_tests: [not_null, unique]
       - name: case_id
-        description: Case key tying the event back to the case performance fact.
-        tests:
+        data_type: varchar
+        description: Case to which the event belongs.
+        data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('fact_case_performance')
                 field: case_id
       - name: event_at
-        description: Timestamp of the event in the synthetic lifecycle.
+        data_type: timestamp
+        description: Time at which the event occurred.
+        data_tests: [not_null]
       - name: event_type
-        description: Event classification used to reconstruct case history.
+        data_type: varchar
+        description: Event classification.
       - name: from_status
-        description: Status before the event, where applicable.
+        data_type: varchar
+        description: Status before the event, when supplied.
       - name: to_status
-        description: Status after the event, where applicable.
+        data_type: varchar
+        description: Status after the event, when supplied.
       - name: team_id
-        description: Team associated with the event at that point in the lifecycle.
-        tests:
+        data_type: varchar
+        description: Team responsible at the time of the event.
+        data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_team')
                 field: team_id
       - name: event_sequence_number
-        description: Ordered event number within each case lifecycle.
+        data_type: bigint
+        description: Event order within the case, using event time and event key.
+        data_tests: [not_null]
       - name: previous_event_type
-        description: Previous event classification for audit and sequence checks.
+        data_type: varchar
+        description: Previous event in the case sequence.
       - name: next_event_type
-        description: Next event classification for audit and sequence checks.
+        data_type: varchar
+        description: Next event in the case sequence.
       - name: first_event_at
-        description: First event timestamp observed for the case.
+        data_type: timestamp
+        description: Earliest event time observed for the case.
       - name: latest_event_at
-        description: Latest event timestamp observed for the case.
+        data_type: timestamp
+        description: Latest event time observed for the case.
       - name: event_notes
-        description: Synthetic note field describing the event.
+        data_type: varchar
+        description: Synthetic note attached to the event.
 
   - name: fact_case_performance
-    description: Case-level fact table for lifecycle, SLA, overdue, and cycle-time reporting.
+    description: Case lifecycle and SLA evidence at one row per case.
+    config:
+      contract:
+        enforced: true
     columns:
       - name: case_id
-        description: Stable synthetic service case key and fact-table grain.
-        tests:
-          - not_null
-          - unique
+        data_type: varchar
+        description: Stable case key and table grain.
+        data_tests: [not_null, unique]
       - name: case_reference
-        description: Human-readable synthetic case reference.
+        data_type: varchar
+        description: Synthetic case reference.
       - name: team_id
-        description: Team key responsible for the case.
-        tests:
+        data_type: varchar
+        description: Team responsible for the case.
+        data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_team')
                 field: team_id
       - name: category_id
-        description: Service category key assigned to the case.
-        tests:
+        data_type: varchar
+        description: Service category assigned to the case.
+        data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_service_category')
                 field: category_id
       - name: priority
-        description: Case priority used for SLA target lookup and workload review.
+        data_type: varchar
+        description: Priority used to find the effective SLA target.
       - name: current_status
-        description: Current operational case status from the latest case state.
+        data_type: varchar
+        description: Case status as at the configured report date.
       - name: reporting_status
-        description: Management reporting classification derived from status and SLA state.
-        tests:
+        data_type: varchar
+        description: Reporting classification derived from case and measurement state.
+        data_tests:
           - not_null
           - accepted_values:
               arguments:
-                values: ["closed", "cancelled", "paused", "open_overdue", "open_within_sla"]
+                values:
+                  - closed
+                  - cancelled
+                  - paused
+                  - open_not_measured
+                  - open_overdue
+                  - open_within_sla
       - name: opened_at
-        description: Case opened timestamp.
+        data_type: timestamp
+        description: Time at which the case opened.
       - name: closed_at
-        description: Case closed timestamp when available.
+        data_type: timestamp
+        description: Time at which the case closed, when applicable.
       - name: sla_due_at
-        description: SLA due timestamp calculated from target rules.
+        data_type: timestamp
+        description: Due time supplied for SLA assessment.
       - name: reporting_period
-        description: Month-level reporting period used in the management mart.
+        data_type: date
+        description: First day of the month in which the case opened.
+      - name: report_date
+        data_type: date
+        description: Reproducible cutoff date used for age and overdue logic.
+        data_tests: [not_null]
       - name: is_open_active
-        description: Boolean flag for open or in-progress cases that remain active.
+        data_type: boolean
+        description: Whether the case is open or in progress.
       - name: is_paused
-        description: Boolean flag for paused cases.
+        data_type: boolean
+        description: Whether the case is paused.
       - name: is_closed
-        description: Boolean flag for closed cases.
+        data_type: boolean
+        description: Whether the case is closed.
       - name: is_cancelled
-        description: Boolean flag for cancelled cases.
+        data_type: boolean
+        description: Whether the case is cancelled.
       - name: was_reopened
-        description: Indicates whether the event history includes a reopen event.
+        data_type: boolean
+        description: Whether the event history contains a reopen event.
       - name: was_paused
-        description: Indicates whether the event history includes a paused state.
+        data_type: boolean
+        description: Whether the event history contains a pause event.
       - name: is_sla_eligible
-        description: Indicates whether the case is in scope for SLA calculation.
+        data_type: boolean
+        description: Whether the category is governed by an SLA.
+        data_tests: [not_null]
+      - name: has_sla_due_at
+        data_type: boolean
+        description: Whether a due time is available for measurement.
+        data_tests: [not_null]
+      - name: has_matched_target
+        data_type: boolean
+        description: Whether an effective target matched category, priority, and open date.
+        data_tests: [not_null]
+      - name: sla_measurement_status
+        data_type: varchar
+        description: Reason the case is measured or excluded from the SLA rate.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [not_eligible, missing_due_date, missing_target, measured]
       - name: is_overdue
-        description: Indicates whether an active case has passed its SLA due timestamp.
+        data_type: boolean
+        description: Whether active SLA work is past its due time at the report cutoff.
       - name: paused_past_sla_due
-        description: Indicates whether a paused case has passed its SLA due timestamp.
+        data_type: boolean
+        description: Whether paused SLA work is past its due time at the report cutoff.
       - name: sla_met_flag
-        description: Indicates whether a closed SLA-eligible case met its target.
+        data_type: boolean
+        description: Whether a closed, measured case met its due time.
       - name: target_id
-        description: SLA target key joined from the target reference data.
+        data_type: varchar
+        description: Effective target matched to the case.
       - name: sla_hours
-        description: SLA target duration in hours.
+        data_type: integer
+        description: Hours allowed by the matched target.
       - name: target_met_rate
-        description: Synthetic target benchmark rate for the category and priority.
+        data_type: double
+        description: Expected SLA rate in the matched target row.
       - name: cycle_time_days
-        description: Days between opened and closed timestamps for closed cases.
+        data_type: bigint
+        description: Calendar days between open and close for closed cases.
       - name: age_days_at_report_date
-        description: Days open as of the report date for unresolved cases.
+        data_type: bigint
+        description: Calendar days since opening for unresolved cases at the cutoff.
 
   - name: mart_service_performance
-    description: Management-facing service performance mart by period, team, and category.
+    description: Opened case cohort metrics by month, team, and category.
+    config:
+      contract:
+        enforced: true
     columns:
       - name: reporting_period
-        description: Month-level reporting period for the aggregate row.
-        tests:
-          - not_null
+        data_type: date
+        description: First day of the case opening month.
+        data_tests: [not_null]
+      - name: report_date
+        data_type: date
+        description: Cutoff date shared by every row in the build.
+        data_tests: [not_null]
       - name: team_id
-        description: Team key for the aggregate row.
-        tests:
+        data_type: varchar
+        description: Team key for the cohort row.
+        data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_team')
                 field: team_id
       - name: category_id
-        description: Service category key for the aggregate row.
-        tests:
+        data_type: varchar
+        description: Service category key for the cohort row.
+        data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_service_category')
                 field: category_id
       - name: case_count
-        description: Count of cases in the reporting period, team, and category.
+        data_type: bigint
+        description: Cases opened in the month, team, and category.
       - name: closed_case_count
-        description: Count of cases closed in the aggregate row.
+        data_type: bigint
+        description: Cohort cases closed by the report date.
       - name: open_case_count
-        description: Count of active open cases in the aggregate row.
+        data_type: bigint
+        description: Cohort cases still open or in progress at the report date.
       - name: overdue_open_case_count
-        description: Count of open cases past SLA due timestamp.
+        data_type: bigint
+        description: Active cohort cases past their due time.
       - name: paused_case_count
-        description: Count of paused cases in the aggregate row.
+        data_type: bigint
+        description: Cohort cases paused at the report date.
       - name: reopened_case_count
-        description: Count of cases with at least one reopen event.
+        data_type: bigint
+        description: Cohort cases with at least one reopen event.
       - name: sla_eligible_case_count
-        description: Count of cases eligible for SLA calculation.
-      - name: closed_sla_eligible_case_count
-        description: Count of closed cases included in SLA-met-rate denominator.
+        data_type: bigint
+        description: Cohort cases in categories governed by an SLA.
+      - name: sla_measured_case_count
+        data_type: bigint
+        description: Eligible cohort cases with a due time and effective target.
+      - name: closed_sla_measured_case_count
+        data_type: bigint
+        description: Closed measured cases used as the SLA rate denominator.
       - name: sla_met_case_count
-        description: Count of closed SLA-eligible cases that met target.
+        data_type: bigint
+        description: Closed measured cases completed by their due time.
+      - name: missing_sla_due_case_count
+        data_type: bigint
+        description: Eligible cases excluded because no due time is present.
+      - name: missing_target_case_count
+        data_type: bigint
+        description: Eligible cases excluded because no effective target matched.
       - name: average_cycle_time_days
-        description: Average cycle time in days for closed cases in the aggregate row.
+        data_type: double
+        description: Mean calendar days to close for closed cohort cases.
       - name: median_cycle_time_days
-        description: Median cycle time in days for closed cases in the aggregate row.
+        data_type: double
+        description: Median calendar days to close for closed cohort cases.
       - name: average_open_age_days
-        description: Average unresolved age in days for open cases.
+        data_type: double
+        description: Mean age of unresolved cohort cases at the cutoff.
+      - name: average_sla_target_rate
+        data_type: double
+        description: Mean target rate for closed measured cases.
       - name: sla_met_rate
-        description: SLA met case count divided by closed SLA-eligible case count.
-      - name: overdue_share
-        description: Overdue case count divided by total case count in the aggregate row.
+        data_type: double
+        description: SLA met cases divided by closed measured cases.
+      - name: overdue_open_rate
+        data_type: double
+        description: Overdue active cases divided by active open cases.
+      - name: sla_target_variance
+        data_type: double
+        description: Actual SLA rate minus the average applicable target rate.

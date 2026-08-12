@@ -1,4 +1,4 @@
 # Intermediate Models
 
-Intermediate models will hold lifecycle, SLA, and business-rule calculations.
-
+These views order events, assemble the case lifecycle, match effective targets,
+and classify SLA measurement before any aggregation.

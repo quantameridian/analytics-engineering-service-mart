@@ -5,205 +5,151 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/quantameridian/analytics-engineering-service-mart/badge)](https://scorecard.dev/viewer/?uri=github.com/quantameridian/analytics-engineering-service-mart)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Project purpose
+This dbt project turns service case extracts into a controlled reporting mart.
+It answers a practical management question: for each monthly intake cohort,
+which teams and categories carry unresolved work, overdue cases, weak SLA
+performance, or slow closure times?
 
-This repository is a public portfolio example of analytics engineering with dbt. It turns service and operations extracts into tested reporting models.
+The repository can be run without cloud credentials. Five synthetic extracts are
+loaded into DuckDB, transformed through staging and intermediate models, and
+published as two dimensions, two facts, and one aggregate mart.
 
-It uses synthetic seed data, SQL models, dbt tests, and clear notes to show how raw service records can become a service performance mart that someone else can inspect and run.
+## Read The Result First
 
-## Portfolio focus
+The fastest route through the work is:
 
-This repo is designed to show the work behind a reliable dashboard: source modelling, staging logic, dimensional design, metric definitions, tests, lineage, and a mart preview that is generated from the project rather than typed by hand.
+1. Open the generated [mart preview](docs/mart-output-preview.md).
+2. Read the [metric definitions](docs/metric-definitions.md), especially the SLA denominator.
+3. Inspect the effective target join in [int_service_sla_status.sql](models/intermediate/int_service_sla_status.sql).
+4. Inspect the enforced schemas and tests in [models/marts/schema.yml](models/marts/schema.yml).
+5. Open the generated [build evidence](docs/build-evidence.md).
 
-A hiring or technical reviewer should be able to follow the model route without needing private data or cloud credentials. Raw service records move through staging, intermediate logic, facts, dimensions, and a final mart. Along the way, the repo shows model grain, metric definitions, dbt tests, exposures, and a generated preview from DuckDB.
+The reporting period is the month in which a case opened. Counts describe the
+state of that intake cohort at the configured report date, `2026-06-19`. This is
+not a period end backlog snapshot and it does not claim that closures happened in
+the opening month.
 
-What this does not claim: this is not a deployed warehouse project. There is no cloud warehouse target, production scheduler, live freshness feed, or BI dashboard yet. The value is in the modelling, testing, contract, and review path.
+## Business Rules
 
-## Reviewer quick path
+Service records often arrive as separate case, event, team, category, and target
+extracts. Repeating joins and KPI logic in a dashboard makes the result difficult
+to test. This project keeps that logic in dbt and publishes fields that a report
+can consume directly.
 
-If you only have a few minutes, start here:
+The SLA calculation makes four states visible:
 
-1. Read [docs/reviewer-guide.md](docs/reviewer-guide.md).
-2. Read the source to mart route and facts and dimensions below.
-3. Inspect `contracts/service-mart-contract.json` for the source, mart, exposure, and quality gate contract.
-4. Inspect `docs/mart-output-preview.md` to see a generated sample of the final mart.
-5. Read [docs/orchestration-and-freshness.md](docs/orchestration-and-freshness.md) for the scheduler and freshness path.
-6. Run `make qa` to validate the contract, seed, run, test, generate dbt docs, and refresh the mart preview.
+| State | Meaning | Included in SLA rate |
+| --- | --- | --- |
+| `measured` | Category is eligible, a due time exists, and an effective target matched | Yes, when closed |
+| `not_eligible` | Category is outside SLA scope | No |
+| `missing_due_date` | Category is eligible but the case has no due time | No |
+| `missing_target` | Category is eligible but no target applied on the open date | No |
 
-The current GitHub Actions workflow runs dbt seed, run, test, docs generation, and preview export on every push to `main`.
+This prevents missing data from being silently treated as good or bad SLA
+performance. The mart publishes both the exclusions and the measured denominator.
 
-## Business problem
+Targets match on category, priority, and case open date. Overlapping target
+periods fail a data test. The report date is a dbt variable shared by age and
+overdue calculations, which keeps local and CI results reproducible.
 
-Service and operations reporting often starts with disconnected exports: case lists, team files, service events, status changes, categories, targets, and SLA extracts. The report becomes hard to trust when the logic is hidden in spreadsheets or repeated by hand.
-
-The scenario is a service function that cannot reliably answer basic management questions:
-
-- how many cases are open;
-- how many cases are overdue;
-- how long cases take to close;
-- which teams are under pressure;
-- whether SLA performance is improving;
-- which categories create the highest workload.
-
-This project shows how those questions can be answered through a clear model route rather than repeated spreadsheet work.
-
-## What this project shows
-
-- SQL transformation from raw extracts to models that are ready for reporting.
-- dbt project structure with staging, intermediate, and mart layers.
-- Dimensional modelling for service performance reporting.
-- Defined model grain and metric logic.
-- Data tests for keys, relationships, accepted values, and metric assumptions.
-- Lineage from source extracts to management outputs.
-- Documentation that separates business questions from implementation detail.
-
-## Skills demonstrated
-
-| Skill | Where to inspect |
-| --- | --- |
-| dbt project structure | `models/staging`, `models/intermediate`, and `models/marts` |
-| Dimensional modelling | `dim_team`, `dim_service_category`, `fact_case_performance`, `fact_service_event`, and `mart_service_performance` |
-| Data testing | `models/**/schema.yml` and `tests/generic` / `tests/assertions` |
-| Data contract discipline | `contracts/service-mart-contract.json` and `scripts/validate_service_mart_contract.py` |
-| Downstream lineage | `models/exposures.yml` and generated dbt docs |
-| Metric definition | [docs/metric-definitions.md](docs/metric-definitions.md) and [models/marts/schema.yml](models/marts/schema.yml) |
-| Orchestration readiness | [docs/orchestration-and-freshness.md](docs/orchestration-and-freshness.md) |
-| Review output | [docs/mart-output-preview.md](docs/mart-output-preview.md) generated from DuckDB after dbt run |
-| Public repo security practice | [docs/security-posture.md](docs/security-posture.md), CI, CodeQL, Scorecard, and dependency audit |
-
-## Architecture
-
-Implemented dbt route:
+## Model Route
 
 ```mermaid
 flowchart LR
-    A["Seed extracts"] --> B["Staging models"]
-    B --> C["Intermediate lifecycle and SLA models"]
-    C --> D["Facts and dimensions"]
-    D --> E["Management reporting mart"]
+    A["Case extracts"] --> B["Staging views"]
+    C["Event extracts"] --> B
+    D["Reference extracts"] --> B
+    B --> E["Event sequence"]
+    B --> F["Case lifecycle"]
+    E --> F
+    F --> G["SLA measurement"]
+    B --> G
+    G --> H["Case fact"]
+    E --> I["Incremental event fact"]
+    B --> J["Dimensions"]
+    H --> K["Service performance mart"]
 ```
 
-The project keeps transformation logic in dbt rather than in a reporting tool. Staging models clean the seed extracts, intermediate models calculate case lifecycle and SLA state, and mart models expose dimensions, facts, and a management aggregate.
-
-## Source tables
-
-The project uses synthetic dbt seed files:
-
-| Source seed | Purpose | Grain |
-| --- | --- | --- |
-| `raw_cases.csv` | One row per service case or operational request | Case |
-| `raw_teams.csv` | Team reference data and reporting ownership | Team |
-| `raw_service_events.csv` | Event history for assignment, status change, review, pause, and closure | Case event |
-| `raw_case_categories.csv` | Case category and service grouping reference | Category |
-| `raw_targets.csv` | SLA target thresholds by category and priority | Category/priority target |
-
-## Facts and dimensions
-
-| Model | Type | Grain | Purpose |
+| Published model | Grain | Materialization | Main use |
 | --- | --- | --- | --- |
-| `dim_team` | Dimension | One row per team | Team ownership, reporting unit, active flag |
-| `dim_service_category` | Dimension | One row per category | Category grouping and reporting labels |
-| `fact_case_performance` | Fact | One row per case | Case lifecycle, status, owner, SLA, overdue and cycle time fields |
-| `fact_service_event` | Fact | One row per case event | Event detail for lifecycle review |
-| `mart_service_performance` | Mart | One row per reporting period, team, and category | Service metrics for management review |
+| `dim_team` | One row per team | Table | Ownership and service area labels |
+| `dim_service_category` | One row per category | Table | Category and service group labels |
+| `fact_case_performance` | One row per case | Table | Lifecycle, SLA, age, and exception evidence |
+| `fact_service_event` | One row per event | Incremental | Ordered audit trail with a seven day lookback |
+| `mart_service_performance` | One row per opening month, report date, team, and category | Table | Cohort workload and service performance |
 
-## Model grain
+Every published model has an enforced dbt contract. The event fact uses an
+incremental merge by `event_id`; the quality gate reruns it and compares row count
+and content hash to prove that unchanged input is idempotent.
 
-The main fact table uses one row per case. Event history remains separate so lifecycle calculations are traceable. The management mart aggregates to reporting period, team, and category.
+## Quality Gate
 
-## Sample data
-
-All sample data is synthetic. It represents generic service activity only, such as cases, teams, service events, dates, statuses, categories, and simple SLA indicators.
-
-See [docs/data-dictionary.md](docs/data-dictionary.md) for field definitions, row counts, assumptions, and known data imperfections.
-
-## How to run locally
-
-Install the local dbt environment:
-Use Python 3.11 or newer; the CI security checks run on Python 3.11.
+Create a Python 3.11 or newer environment, then run:
 
 ```bash
 make install
-```
-
-Then load seeds, build the models, and run tests:
-
-```bash
+make audit
 make qa
 ```
 
-Or run the dbt commands directly with the local profile:
+`make qa` performs a clean build. It validates source headers and row counts,
+lints the Python support scripts, builds every seed and model, runs unit and data
+tests, generates the dbt catalog, refreshes the mart preview, writes stable build
+evidence, and verifies the incremental fact.
+
+The same gate runs in GitHub Actions. CI uploads the dbt manifest, catalog, run
+results, mart preview, and build evidence for seven days. Generated databases,
+compiled SQL, logs, caches, and credentials remain ignored by Git.
+
+Individual commands remain available for investigation:
 
 ```bash
-dbt seed --profiles-dir .
-dbt run --profiles-dir .
-dbt test --profiles-dir .
+make seed
+make run
+make test
+make docs
+make preview
+make verify-incremental
 ```
 
-The project uses DuckDB locally and writes the development database to `target/service_mart.duckdb`.
+## Repository Map
 
-## Outputs
+| Path | What it contains |
+| --- | --- |
+| `seeds/` | Synthetic case, event, team, category, and target inputs |
+| `models/staging/` | Type handling and source normalization |
+| `models/intermediate/` | Event order, lifecycle, SLA eligibility, and target matching |
+| `models/marts/` | Contracted dimensions, facts, and aggregate mart |
+| `tests/` | Reconciliation, grain, date, target, rate, and business rule assertions |
+| `contracts/` | Source shape, reporting context, model, and quality gate agreement |
+| `scripts/` | Contract validation, preview export, build evidence, and idempotency check |
+| `docs/` | Metric, lineage, operating, security, and decision records |
 
-Current outputs:
+## Engineering Decisions
 
-- staged service data with cleaned column names and types;
-- intermediate case lifecycle, service event sequence, and SLA status models;
-- dimensional models for teams and categories;
-- fact table for case performance;
-- service performance mart for management review;
-- generated mart preview in `docs/mart-output-preview.md`;
+The project uses DuckDB because the complete route can be reviewed locally. SQL
+is kept close to ANSI patterns, while date functions and the incremental strategy
+remain adapter specific. A warehouse migration would need adapter testing,
+credential management, source freshness rules, deployment controls, and volume
+testing.
 
-Local generated outputs:
+The current input contains 30 cases and 61 events. It is large enough to exercise
+closed, open, paused, reopened, cancelled, overdue, eligible, and excluded paths.
+It is not evidence of scale or warehouse performance.
 
-- dbt docs artifacts in `target/`;
-- DuckDB development database in `target/service_mart.duckdb`.
+Detailed rationale and tradeoffs are recorded in:
 
-## Tests and quality checks
+- [modelling decisions](docs/modelling-decisions.md)
+- [data lineage](docs/data-lineage.md)
+- [orchestration and freshness](docs/orchestration-and-freshness.md)
+- [test plan](docs/test-plan.md)
+- [security posture](docs/security-posture.md)
+- [limitations](docs/limitations.md)
 
-Current checks:
+The implementation follows dbt guidance on [model contracts](https://docs.getdbt.com/docs/mesh/govern/model-contracts), [unit tests](https://docs.getdbt.com/docs/build/unit-tests), and [incremental models](https://docs.getdbt.com/docs/build/incremental-models).
 
-- source contract validation for seed headers, row counts, published marts, and dbt exposures;
-- not null and unique tests on source and model keys;
-- accepted values for statuses, priorities, event types, and active flags;
-- relationship tests between cases, teams, categories, events, and SLA targets;
-- business rule tests for non negative cycle time, overdue classification, and SLA flag consistency;
-- metric tests for overdue, SLA, backlog, and cycle time calculations.
-- mart column descriptions are included for generated dbt docs review.
-- Python/dbt dependencies are audited with `make audit`.
-- GitHub Actions CI installs the local dbt/DuckDB environment and runs `dbt seed`, `dbt run`, `dbt test`, `dbt docs generate`, and the mart preview export.
+## Data Boundary
 
-Security posture, warehouse credential boundaries, and public data rules are documented in [docs/security-posture.md](docs/security-posture.md).
-
-## Acceptance criteria
-
-The current public review criteria are:
-
-- source seeds are synthetic and documented;
-- staging models preserve source meaning while cleaning names and types;
-- intermediate models make lifecycle and SLA logic explicit;
-- fact and dimension grains are documented;
-- dbt tests pass locally;
-- the mart can answer the reporting questions listed in this README;
-- limitations are clear and do not imply real client delivery.
-
-## Where this fits
-
-This repo shows the work that should sit behind a reliable dashboard: source to output modelling, documented metrics, tested transformations, and SQL that another person can follow.
-
-It is deliberately separate from the Python data quality engine repo. This project focuses on SQL modelling and reporting mart design; it does not generate exception registers or score source data quality.
-
-For portfolio review, this repo is strongest as evidence of dbt modelling, SQL transformation design, data tests, metric definition, and downstream lineage.
-
-## Limitations
-
-- Synthetic data only.
-- Local dbt project rather than a cloud warehouse deployment.
-- Metrics will be illustrative and should not be treated as industry benchmarks.
-- Current dbt models cover staging, intermediate logic, dimensions, facts, and the service performance mart.
-- CI uses DuckDB locally and does not test deployment to a cloud warehouse or BI tool.
-
-## Next improvements
-
-1. Add more seed rows so the mart supports richer trend and category comparisons.
-2. Add SQL linting if the project grows beyond the current compact model set.
-3. Add a dbt docs screenshot only after it is generated from the actual project.
+All names and records are synthetic. The local profile writes only to
+`target/service_mart.duckdb`. Do not add production credentials, private
+extracts, customer records, employer data, or generated dbt artifacts.

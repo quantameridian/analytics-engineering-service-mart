@@ -1,18 +1,17 @@
 # Contributing
 
-This repository is primarily a portfolio artifact, but contributions and review
+This repository is a compact reference implementation, but contributions and review
 comments are welcome if they improve clarity, correctness, or reproducibility.
 
 ## Before opening a pull request
 
-1. Keep all data synthetic and non-client.
+1. Keep all data synthetic and free of client information.
 2. Keep `target/`, `logs/`, local profiles, and virtual environments out of Git.
 3. Run:
 
    ```bash
-   make seed
-   make run
-   make test
+   make audit
+   make qa
    ```
 
 4. Update model documentation when model grain, tests, or metrics change.

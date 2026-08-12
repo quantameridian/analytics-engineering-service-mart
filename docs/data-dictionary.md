@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This document describes the synthetic seed data for the service mart project. The seed files are generic, non-client, and designed to support later dbt modelling of case lifecycle, team ownership, SLA performance, workload, and overdue cases.
+This document describes the synthetic seed inputs used to build case lifecycle,
+team ownership, SLA, workload, and overdue measures.
 
 ## Seed files
 
@@ -19,9 +20,9 @@ This document describes the synthetic seed data for the service mart project. Th
 | Field | Description |
 | --- | --- |
 | `case_id` | Stable case identifier used for joins |
-| `case_reference` | Human-readable synthetic case reference |
+| `case_reference` | Readable synthetic case reference |
 | `opened_at` | Timestamp when the case was opened |
-| `closed_at` | Timestamp when the case was closed; blank for open, paused, or in-progress cases |
+| `closed_at` | Timestamp when the case was closed; blank for open, paused, or in progress cases |
 | `current_status` | Current case status |
 | `priority` | Case priority |
 | `team_id` | Owning team identifier |
@@ -29,7 +30,7 @@ This document describes the synthetic seed data for the service mart project. Th
 | `request_channel` | Intake channel such as portal, phone, or email |
 | `customer_segment` | Generic segment label used for reporting |
 | `sla_due_at` | SLA due timestamp where the case is SLA eligible |
-| `reporting_period` | Calendar month used for simple reporting examples |
+| `reporting_period` | Case opening month in `YYYY-MM` format |
 
 ## `raw_teams.csv`
 
@@ -63,7 +64,7 @@ This document describes the synthetic seed data for the service mart project. Th
 | --- | --- |
 | `category_id` | Stable category identifier |
 | `category_name` | Generic category label |
-| `service_group` | Higher-level service grouping |
+| `service_group` | Broader service grouping |
 | `default_priority` | Typical priority for the category |
 | `sla_eligible_flag` | Whether the category is normally SLA eligible |
 
@@ -79,7 +80,7 @@ This document describes the synthetic seed data for the service mart project. Th
 | `active_from` | Start date for the target |
 | `active_to` | End date for inactive targets |
 
-## Approved values for later dbt tests
+## Controlled Values
 
 ### `current_status`
 
@@ -113,11 +114,11 @@ This document describes the synthetic seed data for the service mart project. Th
 
 ## Data assumptions
 
-- All data is synthetic and non-client.
+- All data is synthetic and contains no client information.
 - Dates are concentrated in April, May, and June 2026 to support period trend modelling.
 - SLA due timestamps are blank for categories that are not SLA eligible.
 - Closed cases normally have a `closed_at` timestamp and a closing event.
-- Open, in-progress, and paused cases have blank `closed_at` values.
+- Open, in progress, and paused cases have blank `closed_at` values.
 - Event history is included to support lifecycle reconstruction and reopened/paused case logic.
 
 ## Known data imperfections included intentionally
@@ -126,10 +127,9 @@ The seed data includes realistic modelling challenges:
 
 - open cases with SLA due dates that have already passed;
 - closed cases that missed SLA targets;
-- cancelled and non-SLA-eligible cases;
-- paused cases that should be treated differently from active open backlog;
+- cancelled cases and categories outside SLA scope;
+- paused cases separated from active open work;
 - reopened event history for one case;
 - an inactive team reference row;
 - mixed request channels and customer segments;
 - categories with SLA targets and categories without SLA targets.
-

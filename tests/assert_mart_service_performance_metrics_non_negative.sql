@@ -8,6 +8,8 @@ where
     or paused_case_count < 0
     or reopened_case_count < 0
     or sla_eligible_case_count < 0
-    or closed_sla_eligible_case_count < 0
+    or sla_measured_case_count < 0
+    or closed_sla_measured_case_count < 0
     or sla_met_case_count < 0
-
+    or missing_sla_due_case_count < 0
+    or missing_target_case_count < 0
