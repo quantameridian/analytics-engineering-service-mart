@@ -7,11 +7,14 @@ data warehouse or reporting service and must not be used with real client,
 customer, employee, or protected operational data without a separate security
 review.
 
+Security corrections apply to the current `main` branch. There are no supported
+release branches or deployed service versions.
+
 ## Reporting a vulnerability
 
 Please do not open a public issue for suspected vulnerabilities or accidental
-secret exposure. Use GitHub private vulnerability reporting if enabled, or
-contact the repository owner through the GitHub profile.
+secret exposure. Use [GitHub private vulnerability reporting](https://github.com/quantameridian/analytics-engineering-service-mart/security/advisories/new),
+or contact the repository owner through the GitHub profile.
 
 Include:
 
