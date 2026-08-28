@@ -8,7 +8,7 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = [
-    "dbt-core==1.11.13",
+    "dbt-core==1.12.3",
     "dbt-duckdb==1.11.0",
     "duckdb==1.5.5",
     "pip-audit==2.10.1",
